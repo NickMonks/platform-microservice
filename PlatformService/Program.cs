@@ -4,9 +4,20 @@ using PlatformService.SyncDataServices.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(opt => 
+if(builder.Environment.IsProduction())
+{
+    Console.WriteLine("---> Using Azure SQL Edge");
+    builder.Services.AddDbContext<AppDbContext>(opt => 
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConn")));
+} else 
+{
+    Console.WriteLine("---> Using InMemory Db");
+    builder.Services.AddDbContext<AppDbContext>(opt => 
     opt.UseInMemoryDatabase("InMemory"));
+}
+
+// Add services to the container.
+
 
 builder.Services.AddScoped<IPlatformRepo, PlatformRepo>();
 
@@ -36,6 +47,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-PrepDb.PrepPopulation(app);
+PrepDb.PrepPopulation(app, builder.Environment.IsProduction());
 
 app.Run();
